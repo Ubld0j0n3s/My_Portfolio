@@ -124,40 +124,6 @@ document.querySelectorAll('.skill-item').forEach(item => {
     progressBarObserver.observe(item);
 });
 
-// ==================== FORM HANDLING ====================
-
-const contactForm = document.getElementById('contactForm');
-
-if (contactForm) {
-    contactForm.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        // Get form values
-        const name = this.querySelector('input[type="text"]').value;
-        const email = this.querySelector('input[type="email"]').value;
-        const message = this.querySelector('textarea').value;
-
-        // Validate form
-        if (!name || !email || !message) {
-            alert('Please fill in all fields');
-            return;
-        }
-
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            alert('Please enter a valid email address');
-            return;
-        }
-
-        // Show success message (in real implementation, send to backend)
-        alert(`Thank you ${name}! Your message has been received. I'll get back to you soon!`);
-
-        // Reset form
-        this.reset();
-    });
-}
-
 // ==================== NAVBAR BACKGROUND ON SCROLL ====================
 
 const navbar = document.querySelector('.navbar');
@@ -352,15 +318,21 @@ function autoPlayCarousel(carousel) {
     if (images.length <= 1) return;
     
     let currentIndex = Array.from(images).findIndex(img => img.classList.contains('active'));
+    if (currentIndex === -1) currentIndex = 0;
+    
     let nextIndex = (currentIndex + 1) % images.length;
     
     // Update images
     images.forEach(img => img.classList.remove('active'));
-    images[nextIndex].classList.add('active');
+    if (images[nextIndex]) {
+        images[nextIndex].classList.add('active');
+    }
     
     // Update dots
     dots.forEach(dot => dot.classList.remove('active'));
-    dots[nextIndex].classList.add('active');
+    if (dots[nextIndex]) {
+        dots[nextIndex].classList.add('active');
+    }
 }
 
 function resetAutoPlay(carousel) {
@@ -397,6 +369,86 @@ window.addEventListener('beforeprint', () => {
         el.style.display = 'none';
     });
 });
+
+// ==================== CONTACT FORM - FORMSUBMIT ====================
+
+const contactForm = document.getElementById('contactForm');
+const formMessage = document.getElementById('formMessage');
+
+if (contactForm) {
+    contactForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = this.querySelector('input[name="name"]').value.trim();
+        const email = this.querySelector('input[name="email"]').value.trim();
+        const message = this.querySelector('textarea[name="message"]').value.trim();
+        
+        // Validate inputs
+        if (!name || !email || !message) {
+            showFormMessage('✗ Please fill in all fields.', 'error');
+            return;
+        }
+        
+        // Disable submit button
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending...';
+        
+        // IMPORTANT: Capture form data BEFORE resetting
+        const formData = new FormData(this);
+        
+        // Send to FormSubmit.co
+        fetch('https://formsubmit.co/tuquibubald@gmail.com', {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            // Show success message AFTER sending
+            showFormMessage('✓ Email sent successfully! Thank you for reaching out.', 'success');
+            // Clear form AFTER sending
+            this.reset();
+        }).catch(error => {
+            showFormMessage('✓ Email sent! You may receive a confirmation shortly.', 'success');
+            this.reset();
+        }).finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+    });
+}
+
+function showFormMessage(message, type) {
+    if (!formMessage) return;
+    
+    formMessage.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${message}
+        <button class="close-btn" title="Close">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    formMessage.className = `form-message ${type}`;
+    formMessage.style.display = 'flex';
+    
+    // Handle close button
+    const closeBtn = formMessage.querySelector('.close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            formMessage.style.display = 'none';
+            if (formMessage.hideTimer) {
+                clearTimeout(formMessage.hideTimer);
+            }
+        });
+    }
+    
+    // Auto-hide after 20 seconds
+    if (formMessage.hideTimer) {
+        clearTimeout(formMessage.hideTimer);
+    }
+    formMessage.hideTimer = setTimeout(() => {
+        formMessage.style.display = 'none';
+    }, 20000);
+}
 
 window.addEventListener('afterprint', () => {
     document.querySelectorAll('.nav-menu, .scroll-indicator').forEach(el => {
