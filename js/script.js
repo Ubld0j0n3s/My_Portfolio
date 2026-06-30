@@ -219,6 +219,63 @@ document.querySelectorAll('.stat-card').forEach(card => {
     statObserver.observe(card);
 });
 
+// ==================== CERTIFICATE & PROJECT IMAGE VIEWER ====================
+
+const certificateViewer = document.getElementById('certificateViewer');
+const certificateViewerImage = document.getElementById('certificateViewerImage');
+const certificateViewerCaption = document.getElementById('certificateViewerCaption');
+const certificateViewerClose = document.querySelector('.certificate-viewer-close');
+
+function openCertificateViewer(image) {
+    if (!certificateViewer || !certificateViewerImage || !certificateViewerCaption) return;
+
+    certificateViewerImage.src = image.src;
+    certificateViewerImage.alt = image.alt || 'Preview';
+    
+    // Find caption based on card type
+    let captionText = '';
+    const certCard = image.closest('.certificate-card');
+    const projCard = image.closest('.project-card');
+    
+    if (certCard) {
+        captionText = certCard.querySelector('.certificate-title')?.textContent || '';
+    } else if (projCard) {
+        captionText = projCard.querySelector('.project-title')?.textContent || '';
+    }
+    
+    certificateViewerCaption.textContent = captionText || image.alt || '';
+    certificateViewer.classList.add('active');
+    certificateViewer.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCertificateViewer() {
+    if (!certificateViewer || !certificateViewerImage) return;
+
+    certificateViewer.classList.remove('active');
+    certificateViewer.setAttribute('aria-hidden', 'true');
+    certificateViewerImage.src = '';
+    document.body.style.overflow = '';
+}
+
+// Bind certificate images
+document.querySelectorAll('.certificate-image img').forEach(image => {
+    image.addEventListener('click', () => openCertificateViewer(image));
+});
+
+// Bind project carousel images
+document.querySelectorAll('.carousel-img').forEach(image => {
+    image.addEventListener('click', () => openCertificateViewer(image));
+});
+
+certificateViewerClose?.addEventListener('click', closeCertificateViewer);
+
+certificateViewer?.addEventListener('click', (event) => {
+    if (event.target === certificateViewer) {
+        closeCertificateViewer();
+    }
+});
+
 // ==================== IMAGE LOADING ====================
 
 // If user adds images to assets folder, this will help
